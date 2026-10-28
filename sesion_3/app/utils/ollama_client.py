@@ -34,7 +34,8 @@ import httpx
 logger = logging.getLogger(__name__)
 
 # URL base de Ollama (puede cambiarse con variable de entorno)
-OLLAMA_BASE_URL = "http://localhost:11434"
+import os
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 
 
 class OllamaClient:

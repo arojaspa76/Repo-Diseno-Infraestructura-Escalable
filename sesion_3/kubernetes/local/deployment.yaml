@@ -7,10 +7,13 @@
 # Este archivo define todos los recursos Kubernetes para
 # desplegar la LLM Gateway API en Minikube (local).
 #
+# Requisito previo: Ollama corriendo en el host Ubuntu
+#   ollama serve
+#
 # Uso:
 #   minikube start
-#   kubectl apply -f kubernetes/local/
-#   minikube service llm-gateway-service --url
+#   kubectl apply -f kubernetes/local/deployment.yaml
+#   minikube service llm-gateway-service -n llm-session3 --url
 # ============================================================
 
 ---
@@ -26,21 +29,21 @@ metadata:
 
 ---
 # ── 2. ConfigMap: variables de configuración (no secretas) ──────────────────
+# Apunta al Ollama que corre en el host Ubuntu, no dentro del cluster.
+# host.docker.internal es resuelto por hostAliases en el Pod spec.
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: llm-gateway-config
   namespace: llm-session3
 data:
-  # URL de Ollama dentro del cluster
-  OLLAMA_HOST: "http://ollama-service:11434"
+  OLLAMA_BASE_URL: "http://host.docker.internal:11434"
   ENVIRONMENT: "local"
   LOG_LEVEL: "INFO"
   PORT: "8000"
 
 ---
 # ── 3. Deployment de la API FastAPI ─────────────────────────────────────────
-# Un Deployment garantiza que siempre haya N réplicas corriendo
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -50,64 +53,61 @@ metadata:
     app: llm-gateway
     version: "1.0.0"
 spec:
-  # Número de réplicas (pods) en ejecución
   replicas: 2
-  
-  # Selector: qué pods maneja este Deployment
   selector:
     matchLabels:
       app: llm-gateway
-  
-  # Estrategia de actualización sin downtime
   strategy:
     type: RollingUpdate
     rollingUpdate:
-      maxSurge: 1        # Máximo 1 pod extra durante actualización
-      maxUnavailable: 0  # Nunca bajar la capacidad durante actualización
-  
-  # Plantilla del Pod
+      maxSurge: 1
+      maxUnavailable: 0
   template:
     metadata:
       labels:
         app: llm-gateway
         version: "1.0.0"
     spec:
+      # Resuelve host.docker.internal → IP del host Ubuntu donde corre Ollama.
+      #
+      # IMPORTANTE: Esta IP varía según el equipo. Antes de desplegar:
+      #   1. En el host Ubuntu, ejecutar: hostname -I
+      #   2. Tomar la primera IP de la lista (interfaz principal)
+      #   3. Verificar que Ollama responde: curl http://<esa-ip>:11434/api/tags
+      #   4. Reemplazar la IP de abajo con la obtenida
+      #
+      # NO usar 192.168.49.1 (gateway de Minikube con driver VirtualBox — no
+      # alcanzable desde pods con driver Docker en Linux/WSL2).
+      hostAliases:
+        - ip: "172.23.35.21"      # <-- REEMPLAZAR con: hostname -I | awk '{print $1}'
+          hostnames:
+            - "host.docker.internal"
+
       containers:
         - name: llm-gateway
-          # La imagen que construimos con Docker
           image: llm-gateway:latest
-          imagePullPolicy: IfNotPresent   # Usar imagen local en Minikube
-          
+          imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 8000
               protocol: TCP
-          
-          # Variables de entorno desde ConfigMap
           envFrom:
             - configMapRef:
                 name: llm-gateway-config
-          
-          # Límites de recursos
           resources:
             requests:
-              cpu: "100m"      # 0.1 CPU garantizada
-              memory: "256Mi"  # 256MB garantizados
+              cpu: "100m"
+              memory: "256Mi"
             limits:
-              cpu: "500m"      # Máximo 0.5 CPU
-              memory: "512Mi"  # Máximo 512MB
-          
-          # ── Probes ─────────────────────────────────────────────────────
-          # Liveness: si falla → reiniciar el pod
+              cpu: "500m"
+              memory: "512Mi"
           livenessProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 30    # Esperar 30s antes de verificar
-            periodSeconds: 30          # Verificar cada 30s
-            failureThreshold: 3        # 3 fallos → reiniciar
-          
-          # Readiness: si falla → no enviar tráfico
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
           readinessProbe:
             httpGet:
               path: /health
@@ -117,8 +117,7 @@ spec:
             failureThreshold: 3
 
 ---
-# ── 4. Service: expone el Deployment internamente ────────────────────────────
-# Un Service da una IP fija y DNS name a un conjunto de pods
+# ── 4. Service: expone el Deployment ────────────────────────────────────────
 apiVersion: v1
 kind: Service
 metadata:
@@ -127,72 +126,18 @@ metadata:
   labels:
     app: llm-gateway
 spec:
-  # NodePort expone el servicio en un puerto del nodo
-  # En producción usaríamos LoadBalancer o Ingress
   type: NodePort
   selector:
     app: llm-gateway
   ports:
     - name: http
       protocol: TCP
-      port: 80          # Puerto del Service
-      targetPort: 8000  # Puerto del contenedor
-      nodePort: 30080   # Puerto accesible desde fuera del cluster
+      port: 80
+      targetPort: 8000
+      nodePort: 30880
 
 ---
-# ── 5. Deployment de Ollama ──────────────────────────────────────────────────
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: ollama
-  namespace: llm-session3
-spec:
-  replicas: 1  # Ollama es stateful, solo 1 réplica
-  selector:
-    matchLabels:
-      app: ollama
-  template:
-    metadata:
-      labels:
-        app: ollama
-    spec:
-      containers:
-        - name: ollama
-          image: ollama/ollama:latest
-          ports:
-            - containerPort: 11434
-          resources:
-            requests:
-              cpu: "500m"
-              memory: "2Gi"
-            limits:
-              cpu: "2000m"
-              memory: "4Gi"
-          volumeMounts:
-            - name: ollama-storage
-              mountPath: /root/.ollama
-      volumes:
-        - name: ollama-storage
-          emptyDir: {}   # En producción: PersistentVolumeClaim
-
----
-# ── 6. Service de Ollama ─────────────────────────────────────────────────────
-apiVersion: v1
-kind: Service
-metadata:
-  name: ollama-service
-  namespace: llm-session3
-spec:
-  type: ClusterIP   # Solo accesible dentro del cluster
-  selector:
-    app: ollama
-  ports:
-    - port: 11434
-      targetPort: 11434
-
----
-# ── 7. HorizontalPodAutoscaler ───────────────────────────────────────────────
-# Escala automáticamente los pods según la carga
+# ── 5. HorizontalPodAutoscaler ───────────────────────────────────────────────
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -203,18 +148,18 @@ spec:
     apiVersion: apps/v1
     kind: Deployment
     name: llm-gateway
-  minReplicas: 2    # Mínimo de pods
-  maxReplicas: 10   # Máximo de pods
+  minReplicas: 2
+  maxReplicas: 10
   metrics:
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 70   # Escalar cuando CPU > 70%
+          averageUtilization: 70
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: 80   # Escalar cuando RAM > 80%
+          averageUtilization: 80

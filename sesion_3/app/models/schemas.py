@@ -17,7 +17,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Any
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
@@ -177,7 +177,7 @@ class HealthResponse(BaseModel):
     version: str = Field(description="Versión de la API")
     ollama_connected: bool = Field(description="Si Ollama está disponible")
     ollama_models: list[str] = Field(description="Modelos Ollama disponibles")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
     environment: str = Field(
         default="development",
         description="Entorno: development, staging, production",
@@ -188,4 +188,4 @@ class ErrorResponse(BaseModel):
     """Estructura estándar para respuestas de error."""
     error: str = Field(description="Tipo de error")
     detail: str = Field(description="Descripción detallada")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())

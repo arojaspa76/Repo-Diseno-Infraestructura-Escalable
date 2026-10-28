@@ -25,7 +25,7 @@
 
 # ── Stage 1: Builder ──────────────────────────────────────────────────────────
 # Usamos una imagen con pip para instalar dependencias
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 # Evitar que Python escriba archivos .pyc
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -43,16 +43,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # IMPORTANTE: copiar requirements ANTES del código
 # Esto permite que Docker reutilice el cache si el código cambia
 # pero los requirements no cambiaron
-COPY requirements.txt .
+COPY requirements-docker-local.txt .
 
 # Instalar en directorio específico para copiar al stage final
 RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir --target=/install -r requirements.txt
+    pip install --no-cache-dir --prefix=/install -r requirements-docker-local.txt
 
 
 # ── Stage 2: Runtime ─────────────────────────────────────────────────────────
 # Imagen mínima para producción — solo lo necesario para ejecutar
-FROM python:3.11-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
@@ -67,7 +67,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar dependencias instaladas desde el stage builder
-COPY --from=builder /install /usr/local/lib/python3.11/site-packages
+COPY --from=builder /install/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /install/bin /usr/local/bin
 
 # Crear usuario no-root (seguridad)
 RUN useradd --create-home --shell /bin/bash appuser

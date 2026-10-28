@@ -21,6 +21,10 @@ import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
+from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+from fastapi.responses import Response
+import time
+
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -193,6 +197,45 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
         }
     )
 
+
+# Contadores y métricas
+REQUEST_COUNT = Counter(
+    "llm_gateway_requests_total",
+    "Total de requests recibidos",
+    ["method", "endpoint", "status_code"]
+)
+REQUEST_LATENCY = Histogram(
+    "llm_gateway_request_duration_seconds",
+    "Latencia de requests en segundos",
+    ["endpoint"]
+)
+OLLAMA_REQUESTS = Counter(
+    "llm_gateway_ollama_requests_total",
+    "Total de requests enviados a Ollama",
+    ["model", "status"]
+)
+ACTIVE_REQUESTS = Gauge(
+    "llm_gateway_active_requests",
+    "Requests activos en este momento"
+)
+
+
+@app.get("/metrics", tags=["Observabilidad"], include_in_schema=False)
+async def metrics():
+    """
+    Endpoint de métricas en formato Prometheus.
+    
+    Compatible con Prometheus scraping y Grafana.
+    Kubernetes puede usar este endpoint para HPA basado en métricas custom.
+    
+    Ejemplo de consulta en Prometheus:
+        llm_gateway_requests_total{status_code="200"}
+        rate(llm_gateway_request_duration_seconds_sum[5m])
+    """
+    return Response(
+        content=generate_latest(),
+        media_type=CONTENT_TYPE_LATEST
+    )
 
 # ── Registrar routers ─────────────────────────────────────────────────────────
 app.include_router(router, prefix="/api/v1")

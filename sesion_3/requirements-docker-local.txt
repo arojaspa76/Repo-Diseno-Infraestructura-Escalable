@@ -1,0 +1,33 @@
+# ============================================================
+# Sesión 3: LLM Gateway — dependencias para ejecución LOCAL
+# Solo Ollama — sin SDKs cloud (Azure, GCP, AWS)
+# BSG Institute — Diseño de Infraestructura Escalable para LLMs
+# ============================================================
+# Uso: docker build con este archivo reduce la imagen de ~10 GB a ~250 MB
+# El archivo requirements.txt original conserva todas las dependencias
+# para los módulos de cloud (sesiones posteriores).
+
+# --- FastAPI Core ---
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+
+# --- Pydantic ---
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# --- HTTP clients (ollama_client usa httpx) ---
+httpx==0.27.2
+
+# --- Ollama ---
+ollama==0.4.7
+
+# --- Monitoreo ---
+prometheus-client==0.21.1
+python-json-logger==3.2.0
+loguru==0.7.3
+
+# --- Utilidades ---
+python-dotenv==1.0.1
+tenacity==9.0.0
+pyyaml==6.0.2
