@@ -1,0 +1,4 @@
+# Instala TODO lo necesario para los laboratorios locales (Labs 1-6).
+# Los SDKs de nube (ADK, Foundry, Bedrock...) tienen su propio requirements.txt en cloud-agents/<nube>/<ejemplo>/
+# porque cada framework fija versiones distintas y se instala en un entorno virtual separado.
+-r backend/requirements-dev.txt

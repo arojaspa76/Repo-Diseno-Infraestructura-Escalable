@@ -1,0 +1,6 @@
+# Probado con: semantic-kernel 1.36.0, Python 3.12.
+# `httpx` se declara explícitamente: SK lo importa pero no lo trae como dependencia (hallazgo de validación).
+semantic-kernel>=1.36,<2
+httpx>=0.27
+azure-identity>=1.19
+python-dotenv>=1.0

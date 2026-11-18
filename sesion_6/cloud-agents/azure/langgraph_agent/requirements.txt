@@ -1,0 +1,6 @@
+# Probado con: langgraph 1.2.22, langchain-azure-ai 1.2.3, Python 3.12
+langgraph>=1.0,<2
+langchain-azure-ai>=1.2,<2
+langchain-core>=1.0
+azure-identity>=1.19
+python-dotenv>=1.0

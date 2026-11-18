@@ -1,0 +1,43 @@
+{
+  "_aviso": "VALORES ILUSTRATIVOS PARA CLASE. No son precios reales de ningún proveedor. Reemplácelos con los de la calculadora oficial de su nube (ver docs/04-finops-llm.md) antes de sacar conclusiones.",
+  "moneda": "USD",
+  "horas_por_mes": 730,
+  "instancias": {
+    "cpu-m": {
+      "descripcion": "Servidor solo CPU, 8 vCPU / 32 GB (modelos pequeños cuantizados)",
+      "precio_hora_on_demand": 0.40,
+      "capacidad_relativa": 1,
+      "tokens_por_segundo": 8
+    },
+    "gpu-s": {
+      "descripcion": "1 GPU de ~16 GB VRAM",
+      "precio_hora_on_demand": 1.00,
+      "capacidad_relativa": 4,
+      "tokens_por_segundo": 45
+    },
+    "gpu-m": {
+      "descripcion": "1 GPU de ~24 GB VRAM",
+      "precio_hora_on_demand": 1.60,
+      "capacidad_relativa": 7,
+      "tokens_por_segundo": 80
+    },
+    "gpu-l": {
+      "descripcion": "1 GPU de ~80 GB VRAM",
+      "precio_hora_on_demand": 4.50,
+      "capacidad_relativa": 20,
+      "tokens_por_segundo": 220
+    }
+  },
+  "compromiso": {
+    "1y": {"descuento": 0.30},
+    "3y": {"descuento": 0.50}
+  },
+  "spot": {
+    "descuento": 0.65,
+    "sobrecosto_por_interrupciones": 0.10
+  },
+  "api_administrada": {
+    "precio_entrada_por_mtok": 1.00,
+    "precio_salida_por_mtok": 4.00
+  }
+}
