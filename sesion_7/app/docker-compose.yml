@@ -1,0 +1,53 @@
+# Pila completa local: Ollama (inferencia) + FastAPI (backend) + React (frontend).
+#
+#   Solo CPU:   docker compose up --build
+#   Con GPU NVIDIA (requiere NVIDIA Container Toolkit):
+#               docker compose -f docker-compose.yml -f docker-compose.gpu.yml up --build
+#
+# Después de levantar, descargue los modelos (una sola vez):
+#   docker compose exec ollama ollama pull llama3.2:1b
+#   docker compose exec ollama ollama pull nomic-embed-text
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama_models:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: "10m"      # mantiene el modelo en memoria 10 min (evita cold starts)
+      OLLAMA_NUM_PARALLEL: "4"      # peticiones simultáneas por modelo (ver Lab 3)
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    networks: [internal]
+    # Ollama NO se publica al host: solo el backend puede hablarle (red interna).
+
+  backend:
+    build: ./backend
+    environment:
+      S07_OLLAMA_BASE_URL: http://ollama:11434
+      S07_CORS_ORIGINS: http://localhost:8080
+      S07_API_KEY: ${S07_API_KEY:-}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    volumes:
+      - backend_data:/data
+    ports:
+      - "8000:8000"
+    networks: [internal]
+
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    ports:
+      - "8080:80"
+    networks: [internal]
+
+volumes:
+  ollama_models:
+  backend_data:
+
+networks:
+  internal:

@@ -1,0 +1,3 @@
+-r requirements.txt
+-r app/backend/requirements-dev.txt
+locust>=2.30         # pruebas de carga (loadtest/locustfile.py)

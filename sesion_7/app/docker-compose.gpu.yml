@@ -1,0 +1,10 @@
+# Extensión para GPU NVIDIA. Úsela junto con docker-compose.yml.
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

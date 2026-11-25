@@ -1,0 +1,3 @@
+# Probado contra la API publicada de google-adk (Python 3.12). Verifique la versión vigente: pip index versions google-adk
+google-adk>=1.0
+python-dotenv>=1.0

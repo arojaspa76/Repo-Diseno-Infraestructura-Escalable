@@ -1,0 +1,5 @@
+# Opcional: OpenTelemetry (S07_OTEL_ENABLED=true)
+opentelemetry-api>=1.27
+opentelemetry-sdk>=1.27
+opentelemetry-instrumentation-fastapi>=0.48b0
+opentelemetry-exporter-otlp>=1.27

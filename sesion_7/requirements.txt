@@ -1,0 +1,5 @@
+# Dependencias para ejecutar el backend y los laboratorios 2–6 (Python 3.12).
+# Instalación:  python3.12 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt
+-r app/backend/requirements.txt
+psutil>=6.0          # Lab 2: profiling de CPU/RAM
+matplotlib>=3.9      # Lab 6: gráficas comparativas

@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+# Node
+node_modules/
+dist/
+# Secretos y datos locales — NUNCA al repositorio
+.env
+*.env
+!.env.example
+*.pem
+*.key
+service-account*.json
+# Datos generados
+app/backend/data/
+results/*.json
+results/*.png
+results/*.csv
+!results/.gitkeep
+.adk/
+.bedrock_agentcore.yaml
+.azure/
